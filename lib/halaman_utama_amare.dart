@@ -11,6 +11,7 @@ class HalamanUtamaAmare extends StatefulWidget {
 
 class _HalamanUtamaAmareState extends State<HalamanUtamaAmare> {
   final Set<int> favorites = {};
+  bool isGridView = true; // true = Grid View, false = List View
 
   final List<Map<String, dynamic>> products = [
     {
@@ -117,29 +118,23 @@ class _HalamanUtamaAmareState extends State<HalamanUtamaAmare> {
                 ),
               ],
             ),
-            const Spacer(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: const [
-                Text(
-                  'Curated Secondhand',
-                  style: TextStyle(
-                    color: Color(0xFFFCD34D), // amber-300
-                    fontSize: 10,
-                  ),
-                ),
-                Text(
-                  'Est. 2024',
-                  style: TextStyle(
-                    color: Color(0xFFFDE68A), // amber-200
-                    fontSize: 8,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
         actions: [
+          // Toggle View Button
+          IconButton(
+            icon: Icon(
+              isGridView ? Icons.view_list : Icons.grid_view,
+              color: const Color(0xFFFDE68A),
+              size: 24,
+            ),
+            onPressed: () {
+              setState(() {
+                isGridView = !isGridView;
+              });
+            },
+            tooltip: isGridView ? 'Tampilan Daftar' : 'Tampilan Grid',
+          ),
           IconButton(
             icon: const Icon(
               Icons.favorite_border,
@@ -208,24 +203,10 @@ class _HalamanUtamaAmareState extends State<HalamanUtamaAmare> {
               ),
             ),
 
-            // Products Grid
+            // Products View (Grid or List)
             Padding(
               padding: const EdgeInsets.all(24),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.65,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                ),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return _buildProductCard(product, index);
-                },
-              ),
+              child: isGridView ? _buildGridView() : _buildListView(),
             ),
 
             // Footer
@@ -276,6 +257,210 @@ class _HalamanUtamaAmareState extends State<HalamanUtamaAmare> {
           ],
         ),
       ),
+    );
+  }
+
+  // Grid View (Tampilan Grid)
+  Widget _buildGridView() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.65,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+      ),
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return _buildProductCard(product, index);
+      },
+    );
+  }
+
+  // List View (Tampilan Daftar)
+  Widget _buildListView() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        final product = products[index];
+        final isFavorite = favorites.contains(index);
+
+        return Card(
+          elevation: 4,
+          margin: const EdgeInsets.only(bottom: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(
+              color: Color(0xFFFEF3C7), // amber-100
+              width: 2,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                // Product Image (Thumbnail)
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        product['image'],
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.checkroom,
+                              size: 40,
+                              color: Colors.grey[300],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // Vintage Badge
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD97706), // amber-600
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'VINTAGE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                // Product Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Rating
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            size: 16,
+                            color: Color(0xFFFBBF24), // amber-400
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${product['rating']}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF57534E),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Product Name
+                      Text(
+                        product['name'],
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1C1917), // stone-800
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      // Price
+                      Text(
+                        'Rp ${product['price']}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF92400E), // amber-700
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Action Buttons
+                Column(
+                  children: [
+                    // Favorite Button
+                    GestureDetector(
+                      onTap: () => _toggleFavorite(index),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFFEF3C7),
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          size: 20,
+                          color: isFavorite
+                              ? Colors.red
+                              : const Color(0xFF57534E),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Buy Button
+                    ElevatedButton(
+                      onPressed: () => _navigateToPayment(product),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF92400E), // amber-700
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                      ),
+                      child: const Text(
+                        'Beli',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
